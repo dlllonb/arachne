@@ -1,0 +1,350 @@
+Project Concept: Local Project AI Assistant (“Spider”)
+
+Overview
+
+The goal of this project is to build a project‑embedded AI assistant
+that lives inside a folder on a local machine and acts as a research,
+coding, and reasoning collaborator. The assistant should behave like a
+persistent “spider” living in the project directory, able to observe the
+files within the project, maintain memory of decisions and
+conversations, and assist with analysis, debugging, writing, and
+planning.
+
+The system is intended to support a workflow that commonly includes:
+
+-   Source code repositories (Python and other languages)
+-   Research papers (PDFs)
+-   Notes and text documents
+-   Data outputs and plots
+-   LaTeX or Overleaf writing projects
+-   Experimental or simulation outputs
+
+Rather than existing purely as a web-based chat interface, the AI should
+operate locally within the project environment, with conversations
+stored locally and the project itself serving as contextual knowledge.
+
+The assistant will primarily act as an advisory collaborator, proposing
+explanations, commands, or code changes rather than automatically
+executing actions. The user remains fully in control of execution.
+
+------------------------------------------------------------------------
+
+Core Concept: The “Spider”
+
+The system is metaphorically described as a spider that lives inside a
+project folder.
+
+The spider:
+
+-   Observes files within the project
+-   Builds an internal understanding of project structure
+-   Maintains memory of conversations and decisions
+-   Retrieves relevant snippets when answering questions
+-   Sends structured prompts to powerful reasoning models
+-   Returns explanations, suggestions, and possible diffs or commands
+
+The spider should not operate autonomously. Instead, it should act as a
+co-pilot for reasoning, keeping the human in the decision loop.
+
+------------------------------------------------------------------------
+
+Key Design Principles
+
+1. Project‑Scoped Operation
+
+The AI operates only within the project directory where it is
+initialized.
+
+It should not access files outside the project root unless explicitly
+allowed.
+
+A hidden .spider directory inside the project will store metadata such
+as:
+
+-   conversation history
+-   indexing data
+-   configuration
+-   project memory
+
+Example structure:
+
+project/ code/ notes.txt paper.pdf outputs/ draft.tex .spider/
+
+------------------------------------------------------------------------
+
+2. Read‑Only By Default
+
+The spider should initially operate in a strictly read‑only mode.
+
+It may:
+
+-   read files
+-   retrieve context
+-   analyze code
+-   propose commands
+-   propose diffs
+
+But it should not execute commands or modify files automatically.
+
+Possible future permission tiers:
+
+Tier A — Read only
+Tier B — Propose commands/diffs for the user to run
+Tier C — Allowlisted assisted execution (optional future feature)
+
+------------------------------------------------------------------------
+
+3. Hybrid Local + Remote Architecture
+
+The system should combine:
+
+Local Spider (control layer)
+
+Responsibilities:
+
+-   project awareness
+-   file access
+-   context retrieval
+-   prompt construction
+-   conversation storage
+-   security filtering
+
+Remote Reasoning Model
+
+Responsibilities:
+
+-   heavy reasoning
+-   code generation
+-   debugging analysis
+-   writing assistance
+
+This hybrid approach allows:
+
+-   strong reasoning quality
+-   local privacy and control
+-   efficient prompt construction
+
+The local spider sends only relevant snippets rather than entire files.
+
+------------------------------------------------------------------------
+
+Core Architecture
+
+The system will revolve around a stable core processing loop:
+
+1.  User submits a message
+2.  Spider loads project context and memory
+3.  Context retrieval selects relevant files or snippets
+4.  Prompt packer constructs structured prompt
+5.  Remote model processes the prompt
+6.  Response is streamed to the user
+7.  Turn is stored in the project database
+
+------------------------------------------------------------------------
+
+Key Components
+
+Project Context Provider
+
+Responsible for:
+
+-   identifying project root
+-   scanning files
+-   applying ignore rules
+-   producing project tree summaries
+
+------------------------------------------------------------------------
+
+Retriever
+
+Finds relevant context to include in prompts.
+
+Initial implementation:
+
+-   keyword search using ripgrep
+-   recent file bias
+-   file type heuristics
+
+Future implementations may include:
+
+-   embedding-based retrieval
+-   hybrid retrieval
+-   code graph search
+
+------------------------------------------------------------------------
+
+Prompt Packer
+
+Builds the structured prompt sent to the remote model.
+
+The prompt may include:
+
+-   user question
+-   project tree summary
+-   relevant file snippets
+-   pinned files
+-   project memory
+-   system instructions
+
+------------------------------------------------------------------------
+
+LLM Provider
+
+Handles communication with remote models.
+
+This must be provider‑agnostic so the system can switch between:
+
+-   OpenAI models
+-   Claude models
+-   local models (future)
+
+------------------------------------------------------------------------
+
+Storage System
+
+Stores conversation and metadata locally.
+
+SQLite is recommended because it provides:
+
+-   durability
+-   queryability
+-   future extensibility
+
+Stored objects may include:
+
+-   messages
+-   context snippets used
+-   packed prompts
+-   responses
+-   model metadata
+
+------------------------------------------------------------------------
+
+Policy Layer
+
+Centralized safety and security rules.
+
+Responsibilities:
+
+-   enforcing project root boundary
+-   preventing secret leakage
+-   filtering outbound prompts
+-   controlling tool permissions
+
+------------------------------------------------------------------------
+
+Minimal Viable Product (MVP)
+
+The first working version should include:
+
+CLI Interface
+
+Commands such as:
+
+spider init spider chat spider ask “question”
+
+Project Awareness
+
+The spider can:
+
+-   detect project files
+-   produce project tree summaries
+-   retrieve relevant snippets
+
+Remote Model Integration
+
+Queries a remote reasoning model using structured prompts.
+
+Local Conversation Storage
+
+All conversation history is stored locally in .spider.
+
+Transparent Context
+
+The interface shows:
+
+-   which files were used
+-   which snippets were retrieved
+
+------------------------------------------------------------------------
+
+Phase Roadmap
+
+Phase 0 — Skeleton
+
+-   CLI command
+-   project initialization
+-   chat loop
+-   local conversation storage
+
+Phase 1 — Context Awareness
+
+-   project tree scanning
+-   ripgrep snippet retrieval
+-   prompt packing
+-   remote model queries
+
+Phase 2 — Project Memory
+
+-   persistent notes
+-   pinned files
+-   slash commands
+
+Phase 3 — Code Structure Awareness
+
+-   symbol indexing
+-   basic code graph
+-   improved retrieval routing
+
+Phase 4 — Document Intelligence
+
+-   PDF ingestion
+-   embedding retrieval
+-   citation support
+
+Phase 5 — Optional Tooling
+
+-   diff generation
+-   safe command suggestions
+-   optional controlled execution
+
+------------------------------------------------------------------------
+
+Long‑Term Vision
+
+The final system should behave like a persistent project collaborator
+that:
+
+-   understands the structure of a project
+-   remembers decisions and experiments
+-   assists with coding, research, and writing
+-   helps debug and reason through problems
+-   integrates naturally into existing development workflows
+
+Eventually the spider may run with stronger local models as local AI
+improves.
+
+------------------------------------------------------------------------
+
+Naming Ideas
+
+Spider‑themed names discussed or suggested:
+
+Arachnid OrbWeaver Webmind ThreadSpider CodeSpider LabSpider Orb Arachne
+Weaver Silk Webwalker NestAI ProjectSpider OrbitalSpider
+
+More technical‑sounding options:
+
+ContextWeaver RepoSpider ProjectWeaver ThreadMind GraphSpider
+ResearchSpider
+
+------------------------------------------------------------------------
+
+Philosophy
+
+This project aims to move AI assistance from a web chat paradigm to a
+project‑native paradigm, where the assistant exists within the working
+environment and participates directly in the lifecycle of a project.
+
+The spider does not replace thinking; it amplifies it by providing
+contextual reasoning support.
