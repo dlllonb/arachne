@@ -1,4 +1,4 @@
-Project Concept: Local Project AI Assistant (“Spider”)
+Arachne Project Concept: Local Project AI Assistant (“Spider”)
 
 Overview
 
