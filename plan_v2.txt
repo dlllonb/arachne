@@ -1,0 +1,211 @@
+Arachne Project Plan v2
+
+Mission
+
+Arachne is a local intelligence shell embedded inside a project
+workspace. It uses models as reasoning engines and tools as its hands
+and sensors.
+
+Given a user goal, Arachne should: - understand the objective - form a
+plan - inspect available capabilities - dispatch workers or tools -
+gather structured results - revise the plan as needed - keep the human
+in control
+
+Core Vision
+
+Arachne is a persistent collaborator that lives inside a project folder.
+It observes the environment, remembers decisions, and helps carry
+complex tasks through to completion.
+
+The system acts as:
+
+1.  Reasoner Uses models to interpret goals, plan actions, and
+    synthesize results.
+
+2.  Sensor Observes the project and external environments through tools
+    and adapters.
+
+3.  Actor Takes constrained actions through tools, scripts, and optional
+    execution.
+
+4.  Memory Keeper Stores conversations, plans, decisions, and reusable
+    capabilities.
+
+Guiding Principles
+
+Project‑Scoped Operation Arachne operates primarily within a project
+directory and should default to that scope.
+
+Tool‑First Architecture The system should prefer deterministic tools and
+structured adapters over raw LLM reasoning whenever possible.
+
+Plan Before Action Arachne should produce a task plan before executing
+operations.
+
+Read‑Only by Default Execution permissions should escalate gradually: -
+read-only - propose commands - controlled execution
+
+Structured Outputs Workers should return structured results rather than
+raw text blobs.
+
+Human in the Loop The system must remain transparent and inspectable.
+
+System Architecture
+
+Layer 1: Intelligence Shell Responsible for: - receiving user goals -
+maintaining task state - coordinating planning and execution -
+synthesizing final results
+
+Layer 2: Planning Layer Transforms goals into executable task
+structures.
+
+Responsibilities: - interpret user intent - generate a plan - identify
+dependencies - detect missing information - revise plans as results
+arrive
+
+Example Plan
+
+User: “Build a pitch deck”
+
+Plan: 1. inspect project files 2. summarize research narrative 3.
+generate slide outline 4. collect figures 5. identify missing visuals 6.
+draft deck content
+
+Layer 3: Capability Layer A registry of available tools and actions.
+
+Examples: - read_file - search_code - extract_pdf_text - generate_plot -
+inspect_image - edit_slides - run_python - control_terminal -
+desktop_observe - desktop_click
+
+Each capability includes: - name - inputs - outputs - reliability -
+cost - permission level
+
+Layer 4: Worker Layer Workers perform bounded subtasks.
+
+Examples: - document summarizer - PDF extractor - code search worker -
+plotting worker - slide outline generator - GUI interaction worker
+
+Workers must be: - narrow - inspectable - composable
+
+Layer 5: Environment Layer Adapters that allow Arachne to observe
+structured state.
+
+Initial environments: - filesystem - project memory - terminal
+
+Future environments: - PDFs - images - spreadsheets - slide decks -
+browser - desktop GUI
+
+Layer 6: Memory Layer Stores operational knowledge including: -
+conversations - task plans - tool results - user preferences - promoted
+reusable tools
+
+Execution Loop
+
+1.  receive user goal
+2.  generate or update plan
+3.  inspect capabilities
+4.  choose next action
+5.  execute worker or tool
+6.  collect structured result
+7.  evaluate progress
+8.  revise plan
+9.  return result to user
+10. store results in memory
+
+Capability Selection Strategy
+
+Preferred order of execution:
+
+1.  deterministic built-in capability
+2.  structured environment adapter
+3.  heuristic parser
+4.  model-based perception
+5.  generated helper tool
+6.  generic screen automation
+
+Tool Generation
+
+Arachne may synthesize missing tools when needed.
+
+Two categories:
+
+Ephemeral Helpers Temporary scripts used within a single task.
+
+Reusable Capabilities Helpers that prove useful can be promoted to the
+capability registry.
+
+Example promoted tools: - FITS metadata inspector - GRASP output
+parser - proposal-to-slide-outline converter
+
+Proposed Module Layout
+
+arachne/core/ - shell.py - session.py - planner.py - dispatcher.py -
+synthesizer.py
+
+arachne/capabilities/ - registry.py - capability.py - selectors.py
+
+arachne/workers/ - file_reader.py - code_searcher.py - pdf_worker.py -
+image_worker.py - spreadsheet_worker.py - slides_worker.py -
+python_worker.py
+
+arachne/environments/ - filesystem.py - memory.py - terminal.py -
+browser.py - desktop.py
+
+arachne/memory/ - store.py - history.py - task_log.py
+
+arachne/models/ - provider.py - router.py
+
+arachne/toolsynth/ - builder.py - sandbox.py - validator.py - promote.py
+
+Development Roadmap
+
+Phase 0 – Stabilize Current Core - finalize project awareness - clean
+module boundaries - formalize session state - improve logging
+
+Phase 1 – Introduce Planning - plan generation - step tracking -
+replanning logic
+
+Phase 2 – Capability Registry - structured tool definitions - tool
+metadata - selection logic
+
+Phase 3 – Worker Dispatch - worker interface - result schemas - tracing
+
+Phase 4 – Environment Adapters - PDF - image - spreadsheet - slides -
+terminal integration
+
+Phase 5 – Controlled Tool Synthesis - helper generation - sandbox
+execution - promotion pipeline
+
+Phase 6 – Multi‑Worker Orchestration - parallel task execution -
+aggregation layer
+
+Phase 7 – Desktop and Browser Interaction - GUI observation - action
+primitives (click, type, scroll)
+
+Phase 8 – Full Intelligence Shell - unified planning - multi-environment
+reasoning - persistent operational memory
+
+Target Behavior Example
+
+User: “I want to build a ten minute pitch deck from my proposal.”
+
+Arachne:
+
+1.  parse the goal
+2.  create deck-building plan
+3.  inspect project files
+4.  dispatch workers:
+    -   document summary
+    -   figure inventory
+    -   narrative extraction
+5.  synthesize slide outline
+6.  suggest or generate visuals
+7.  optionally populate slides
+8.  report progress and next steps
+
+End Goal
+
+Arachne becomes a local intelligence shell that: - understands project
+structure - remembers prior work - selects and orchestrates tools -
+builds new helpers when necessary - assists users in completing complex
+tasks
