@@ -17,51 +17,79 @@ def query(user_input: str, instance_root: Path) -> str:
     file_structure = _get_file_structure(instance_root)
     recent_files = _get_recent_files(instance_root)
     current_time = datetime.now().isoformat()
-    
+
+    # System prompt
+    SYSTEM_PROMPT = """
+You are Arachne, an AI agent that assists users with programming and project tasks.
+
+You operate within a project workspace and are provided with:
+- system information
+- project memory
+- conversation history
+- the current user request
+
+Use this information to produce helpful, direct responses.
+Do not mention your own backend infrastructure unless explicitly asked.
+Your main directive is: "Answer the user's actual question below directly and specifically, using all available context."
+""".strip()
+
     # Load memory (project notes)
     memory_block = _load_memory(instance_root)
-    
+
     # Build the core/protected parts
     core_prompt = f"""
-System Information:
+User Request:
+{user_input}
+
+Workspace Context:
 - Project Root: {instance_root}
-- Current Time: {current_time}
 - File Structure: {file_structure}
 - Recent Files: {recent_files}
+- Current Time: {current_time}
 
 Project Memory:
 {memory_block}
 
-User Request: {user_input}
-"""
-    
+""".strip()
+
     # Load history and apply smart budgeting
     MAX_PROMPT_CHARS = 40000
-    history_budget = MAX_PROMPT_CHARS - len(core_prompt)
+    fixed_overhead = len(SYSTEM_PROMPT) + len(core_prompt) + len("\n\nConversation History:\n")
+    history_budget = MAX_PROMPT_CHARS - fixed_overhead
     history_block = _load_history(instance_root, max_chars=max(1000, history_budget))
-    
-    real_query = f"""Conversation History:
+
+    # Build the real query with everything
+    real_query = f"""
+{SYSTEM_PROMPT}
+
+{core_prompt}
+
+Conversation History:
 {history_block}
-{core_prompt}""".strip()
-    
+
+To Reiterate, this is the user request, make sure to address it: {user_input}
+""".strip()
+
     # Final safety truncation (only if absolutely necessary)
     if len(real_query) > MAX_PROMPT_CHARS:
-        # If even with history budget we're over, trim history more aggressively
-        history_block = _load_history(instance_root, max_chars=500)
-        real_query = f"""Conversation History:
+        history_block = _load_history(instance_root, max_chars=1000)
+        real_query = f"""
+{SYSTEM_PROMPT}
+{core_prompt}
+Conversation History:
 {history_block}
-{core_prompt}""".strip()
-    
+""".strip()
+
     # Send to backend from config
-    response = _call_backend(user_input, real_query.strip(), instance_root)
-    
+    response = _call_backend(real_query, instance_root)
+
     # Log the prompt
-    _write_prompt_log(instance_root, real_query.strip())
-    
+    _write_prompt_log(instance_root, real_query)
+
     # write to history (user then assistant)
     _append_history(instance_root, "user", user_input)
     _append_history(instance_root, "assistant", response)
-    
+
     return response
 
 
@@ -222,28 +250,28 @@ def _write_prompt_log(instance_root: Path, real_query: str) -> None:
         print(f"Error: Failed to write to prompts log {log_file}: {e}")
 
 
-def _call_backend(user_input: str, real_query: str, instance_root: Path) -> str:
+def _call_backend(real_query: str, instance_root: Path) -> str:
     """Call the backend specified in .arachne/config.json."""
     import importlib
     
     config_file = instance_root / ".arachne" / "config.json"
-    backend_name = "test"  # Default
+    backend_name = "ollama"  # Default
     try:
         if config_file.exists():
             with open(config_file, "r") as f:
                 config = json.load(f)
-                backend_name = config.get("backend", "test")
+                backend_name = config.get("backend", backend_name)
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON in config file {config_file}: {e}")
-        backend_name = "test"
+        backend_name = backend_name
     except Exception as e:
         print(f"Error: Failed to read config file {config_file}: {e}")
-        backend_name = "test"
+        backend_name = backend_name
     
     # Dynamically import and call the backend
     try:
         backend_module = importlib.import_module(f"arachne.backends.{backend_name}")
-        return backend_module.query(user_input, real_query)
+        return backend_module.query(real_query)
     except ImportError as e:
         return f"Error: Backend '{backend_name}' not found: {e}"
     except AttributeError as e:

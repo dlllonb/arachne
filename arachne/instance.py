@@ -105,7 +105,6 @@ def init_instance(root: Path, name: str = None) -> Path:
         "project_name": name or "arachne_project",
         "created_at": datetime.now().isoformat(),
         "version": 1,
-        "backend": "test"
     }
     config_file = arachne_dir / "config.json"
     with open(config_file, "w") as f:
