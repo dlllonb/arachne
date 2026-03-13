@@ -1,0 +1,259 @@
+
+=== Skill Learning and Long-Term Memory Architecture ===
+
+This section extends the Arachne v2 architecture with two closely related capabilities:
+
+1) Skill learning (procedural memory)
+2) Long-term external memory with retrieval (effectively unbounded memory)
+
+The goal is to allow Arachne to accumulate operational knowledge over time while keeping the LLM
+context small and focused. Instead of requiring the model to remember everything directly in
+context, Arachne stores experiences and procedures on disk and retrieves only the relevant subset
+when solving a task.
+
+---------------------------------------------------------------------
+1. Core Principle: Working Memory vs Long-Term Memory
+---------------------------------------------------------------------
+
+Arachne should treat the LLM context window as *working memory*, not as the total memory of the
+system.
+
+All persistent information lives outside the model in structured disk storage. The LLM only sees:
+
+- the current user request
+- the current environment state
+- retrieved relevant memories
+- relevant skills or procedures
+- necessary tool/capability descriptions
+
+Everything else remains in external memory until needed.
+
+This enables effectively unlimited historical memory while keeping prompt size manageable.
+
+---------------------------------------------------------------------
+2. Memory Types
+---------------------------------------------------------------------
+
+Arachne's long-term memory should be divided into multiple categories rather than a single
+monolithic store. This makes retrieval far more reliable.
+
+Recommended memory types:
+
+Episodic Memory
+Records of specific events and task executions.
+Examples:
+- past conversations
+- execution traces
+- tool call logs
+- experiment runs
+
+Semantic Memory
+Distilled facts about the project, system state, and user preferences.
+
+Examples:
+- design principles
+- project structure summaries
+- known environment details
+- persistent user preferences
+
+Procedural Memory (Skills)
+Reusable procedures describing how to accomplish tasks.
+
+Examples:
+- open and control an application
+- perform a workflow across tools
+- interact with an API
+- run a complex build/test pipeline
+
+Archive Memory
+Raw transcripts and logs that are rarely retrieved directly but remain available for deep search.
+
+---------------------------------------------------------------------
+3. Retrieval Architecture (RAG Layer)
+---------------------------------------------------------------------
+
+When a request arrives, Arachne should not load large memory blocks directly into context.
+
+Instead it should run a retrieval pipeline:
+
+Step 1: Intent Classification
+Determine the type of task:
+- execution
+- question
+- planning
+- debugging
+- environment interaction
+
+Step 2: Memory Target Selection
+Choose which memory stores are likely relevant:
+- skills
+- semantic knowledge
+- episodic logs
+- archive transcripts
+
+Step 3: Candidate Retrieval
+Use multiple strategies:
+
+- keyword search
+- vector embedding similarity
+- metadata filtering
+- recency scoring
+
+Step 4: Reranking
+Select the top few relevant memories or skills.
+
+Step 5: Context Assembly
+Insert only the chosen items into the LLM context.
+
+This cascade prevents memory overload while allowing the system to search arbitrarily large
+history.
+
+---------------------------------------------------------------------
+4. Skill Learning System
+---------------------------------------------------------------------
+
+A skill is a reusable operational procedure built from lower-level capabilities.
+
+Capabilities are primitive actions the system can perform:
+
+Examples:
+- run terminal commands
+- inspect files
+- click UI elements
+- type keyboard input
+- call APIs
+- capture screen state
+
+Skills combine these primitives into repeatable workflows.
+
+Example skill:
+
+"Play a song on Spotify"
+
+Possible steps:
+
+1. Launch Spotify application
+2. Wait for window detection
+3. Locate search bar
+4. Enter user query
+5. Press enter
+6. Click play button
+7. Verify playback state
+
+---------------------------------------------------------------------
+5. Skill Learning Workflow
+---------------------------------------------------------------------
+
+When Arachne receives a request for which no skill exists:
+
+1. Planner generates a plan using available capabilities.
+2. Executor attempts to perform the steps.
+3. Observer verifies intermediate outcomes.
+4. Evaluator determines success or failure.
+5. The run is stored as an episode.
+
+If the task succeeds, the system records the procedure in memory.
+
+---------------------------------------------------------------------
+6. Skill Record Format
+---------------------------------------------------------------------
+
+Skills should be stored in structured form rather than plain text logs.
+
+Example structure:
+
+{
+  "name": "spotify_play_song_desktop",
+  "intents": ["play song on spotify", "spotify playback", "play music"],
+  "requires": ["launch_app", "screen_detect", "click", "keyboard_type"],
+  "preconditions": ["Spotify installed"],
+  "steps": [
+    {"action": "launch_app", "target": "Spotify"},
+    {"action": "wait_for_window", "target": "Spotify"},
+    {"action": "find_ui_element", "target": "search_bar"},
+    {"action": "click"},
+    {"action": "type_text", "source": "user_query"},
+    {"action": "press_key", "key": "Enter"},
+    {"action": "find_ui_element", "target": "play_button"},
+    {"action": "click"}
+  ],
+  "success_criteria": [
+    "audio_playing_indicator"
+  ]
+}
+
+Structured skills make retrieval, modification, and reuse far easier.
+
+---------------------------------------------------------------------
+7. Episode -> Procedure -> Skill Promotion
+---------------------------------------------------------------------
+
+Not every successful run should immediately become a permanent skill.
+
+Instead skills should evolve through stages:
+
+Episode
+A single recorded successful execution trace.
+
+Procedure
+A generalized version derived from multiple episodes.
+
+Promoted Skill
+A validated reusable skill trusted by the planner.
+
+This avoids brittle one-off procedures polluting the skill library.
+
+---------------------------------------------------------------------
+8. Skill Retrieval Process
+---------------------------------------------------------------------
+
+When a request arrives:
+
+1. Search procedural memory for matching skills.
+2. If found:
+   - load the skill description
+   - verify required capabilities exist
+   - execute steps with observation checks
+3. If not found:
+   - generate a new plan
+   - attempt execution
+   - record episode
+   - possibly create new skill.
+
+The model does not need to remember the steps to every skill.
+
+It only needs to remember that skills exist and should be searched.
+
+---------------------------------------------------------------------
+9. Continuous Memory Distillation
+---------------------------------------------------------------------
+
+Raw logs accumulate quickly.
+
+To keep retrieval efficient, Arachne should periodically compress memory by:
+
+- summarizing long conversations
+- extracting facts
+- extracting reusable procedures
+- linking related records
+- updating semantic knowledge files
+
+Memory pipeline:
+
+store -> summarize -> classify -> link -> retrieve -> reuse -> update
+
+---------------------------------------------------------------------
+10. Design Goal
+---------------------------------------------------------------------
+
+The long-term objective is an agent that continuously accumulates operational competence.
+
+Instead of being limited by context size, Arachne becomes more capable by:
+
+- storing experiences
+- extracting procedures
+- retrieving the right knowledge at the right time
+- refining skills through repeated execution.
+
+This enables the system to gradually build a large library of learned abilities while keeping the
+active reasoning context small.
